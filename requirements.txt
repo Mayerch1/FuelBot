@@ -1,0 +1,4 @@
+regex
+requests
+discord.py
+discord-py-slash-command

@@ -1,0 +1,20 @@
+# ./docker-compose.yml
+version: '3.3'
+services:
+  bot:
+    build: .
+    container_name: fuelBot-discord
+    stdin_open: true
+    tty: true
+    
+    environment:
+      - BOT_TOKEN
+
+    volumes:
+      - ./tokens:/code/tokens
+
+    restart: always
+    
+
+
+
