@@ -30,21 +30,6 @@ async def on_slash_command_error(ctx, error):
         raise error
 
 
-@slash.slash(name='help', description='show a help message')
-async def get_help(ctx):
-
-    embed = discord.Embed(title='FuelBot Help', description='Calculate your race fuel usage')
-
-    embed.add_field(name='/help', value='show this message', inline=False)
-    embed.add_field(name='/fuel time', value='use this for time limited races', inline=False)
-    embed.add_field(name='/fuel laps', value='use this for lap limited races', inline=False)
-
-    embed.add_field(name='\u200b', value='If you like this bot, you can leave a vote at [top.gg](https://top.gg/bot/734829435844558999)', inline=False)
-
-    # direct slash response is guaranteed to have permissions
-    await ctx.send(embed=embed)
-
-
 @client.event
 async def on_ready():
     # debug log
@@ -55,10 +40,9 @@ async def on_ready():
     await client.change_presence(activity=discord.Game(name='/fuel'))
 
 
-
-
 def main():
     client.load_extension(f'FuelModule')
+    client.load_extension(f'HelpModule')
     client.load_extension(f'ServerCountPost')
     client.run(token)
 

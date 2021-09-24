@@ -46,6 +46,12 @@ class FuelModule(commands.Cog):
     # Fuel stuff
     #################
     
+    def error_embed(self, title, reason):
+        
+        eb = discord.Embed(title=title, description=reason)
+        eb.color = 0xff0000
+        return eb
+    
     def parseRaceLen(self, length):
         """parse the inputted race duration
            priority for parsing is:
@@ -77,7 +83,12 @@ class FuelModule(commands.Cog):
                 delta += timedelta(hours=int(split[0]))
                 delta += timedelta(minutes=int(split[1]))
         else:
-            delta += timedelta(minutes=int(length))
+            try:
+                mins = int(length)
+            except ValueError:
+                delta = timedelta(minutes=0)
+            else:
+                delta += timedelta(minutes=int(length))
 
   
         return delta
@@ -182,6 +193,46 @@ class FuelModule(commands.Cog):
         eb.set_footer(text=f'Calculation requested by {ctx.author.display_name}', icon_url=ctx.author.avatar_url or ctx.author.default_avatar_url)
         return eb
     
+    
+    async def handle_fuel_calculation(self, ctx, length: str, laps: int, laptime: str, fuel_usage: float, reserve_laps: int):
+        
+        try:
+            fuel_usage = float(fuel_usage)
+        except ValueError:
+            await ctx.send(embed=self.error_embed('Invalid Parameter', 'The `fuel_usage` must be a decimal number (e.g. `3.1`)'))
+            return
+
+        lapTime = self.parseLapTime(laptime)
+        if lapTime <= timedelta(minutes=0):
+            await ctx.send(embed=self.error_embed('Invalid Parameter', 'The `laptime` must be greater than 0. Check for the correct format of `mm:ss.fff`'))
+            return
+        
+        if length:
+            raceTime = self.parseRaceLen(length)
+            if raceTime <= timedelta(minutes=0):
+                await ctx.send(embed=self.error_embed('Invalid Parameter', 'The `raceTime` must be greater than 0. Check for the correct format of `hh:mm`'))
+                return
+            raceLaps = math.ceil(raceTime/lapTime)
+        else:
+            if laps <= 0:
+                await ctx.send(embed=self.error_embed('Invalid Parameter', 'The `laps`-count must be greater than 0'))
+                return
+            raceTime = timedelta(seconds=laps*lapTime.total_seconds())
+
+
+        if reserve_laps < 0:
+            await ctx.send(embed=self.error_embed('Invalid Parameter', 'The `reserve_laps` must be greater or equals to 0'))
+            return
+
+        
+        lapData = FuelModule.LapData(raceTime=raceTime, raceLaps=raceLaps, lapTime=lapTime, fuelUsage=float(fuel_usage), reserveLaps=reserve_laps)
+
+        self.setFuelUsage(lapData)
+        eb = self.getFuelEmbed(ctx, lapData)
+
+        await ctx.send(embed=eb)
+        
+
     @cog_ext.cog_subcommand(base='fuel', name='time', description='Calculate fuel for time limited races',
                             options=[
                                 create_option(
@@ -200,7 +251,7 @@ class FuelModule(commands.Cog):
                                     name='fuel_usage',
                                     description='in liters/lap',
                                     required=True,
-                                    option_type=SlashCommandOptionType.FLOAT
+                                    option_type=SlashCommandOptionType.STRING
                                 ),
                                 create_option(
                                     name='reserve_laps',
@@ -210,18 +261,7 @@ class FuelModule(commands.Cog):
                                 )
                             ])
     async def fuel_time(self, ctx, length, laptime, fuel_usage, reserve_laps=3):
-
-        raceTime = self.parseRaceLen(length)
-        lapTime = self.parseLapTime(laptime)
-        
-        raceLaps = math.ceil(raceTime/lapTime)
-
-        lapData = FuelModule.LapData(raceTime=raceTime, raceLaps=raceLaps, lapTime=lapTime, fuelUsage=float(fuel_usage), reserveLaps=reserve_laps)
-
-        self.setFuelUsage(lapData)
-        eb = self.getFuelEmbed(ctx, lapData)
-
-        await ctx.send(embed=eb)
+        await self.handle_fuel_calculation(ctx, length, None, laptime, fuel_usage, reserve_laps)
     
     @cog_ext.cog_subcommand(base='fuel', name='laps', description='Calculate fuel for time limited races',
                             options=[
@@ -241,7 +281,7 @@ class FuelModule(commands.Cog):
                                     name='fuel_usage',
                                     description='in liters/lap',
                                     required=True,
-                                    option_type=SlashCommandOptionType.FLOAT
+                                    option_type=SlashCommandOptionType.STRING
                                 ),
                                 create_option(
                                     name='reserve_laps',
@@ -251,16 +291,7 @@ class FuelModule(commands.Cog):
                                 )
                             ])
     async def fuel_laps(self, ctx, laps, laptime, fuel_usage, reserve_laps=3):
-        
-        lapTime = self.parseLapTime(laptime)
-        raceTime = timedelta(seconds=laps*lapTime.total_seconds())
-
-        lapData = FuelModule.LapData(raceTime=raceTime, raceLaps=laps, lapTime=lapTime, fuelUsage=float(fuel_usage), reserveLaps=reserve_laps)
-        
-        self.setFuelUsage(lapData)
-        eb = self.getFuelEmbed(ctx, lapData)
-        
-        await ctx.send(embed=eb)
+        await self.handle_fuel_calculation(ctx, None, laps, laptime, fuel_usage, reserve_laps)
     
 def setup(client):
     client.add_cog(FuelModule(client))
