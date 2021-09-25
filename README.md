@@ -62,3 +62,8 @@ By default `@everyone` is allowed to use `slash`-commands.
 ## More Help
 
 Join the support server https://discord.gg/Xpyb9DX3D6 for more help
+
+
+## Attributions
+
+The Icon is created by [Arun Thomas](https://www.iconfinder.com/arunxthomas) and published under [CC-BY 3.0](https://creativecommons.org/licenses/by/3.0/)
