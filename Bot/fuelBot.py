@@ -31,6 +31,13 @@ async def on_slash_command_error(ctx, error):
 
 
 @client.event
+async def on_command_error(cmd, error):
+
+    if isinstance(error, discord.ext.commands.errors.CommandNotFound):
+        pass # silently catch these
+
+
+@client.event
 async def on_ready():
     # debug log
     print('Logged in as')
