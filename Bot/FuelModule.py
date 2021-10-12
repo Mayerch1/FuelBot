@@ -194,7 +194,7 @@ class FuelModule(commands.Cog):
         return eb
     
     
-    async def handle_fuel_calculation(self, ctx, length: str, laps: int, laptime: str, fuel_usage: float, reserve_laps: int):
+    async def handle_fuel_calculation(self, ctx, length: str, raceLaps: int, laptime: str, fuel_usage: float, reserve_laps: int):
         
         try:
             fuel_usage = float(fuel_usage)
@@ -214,10 +214,10 @@ class FuelModule(commands.Cog):
                 return
             raceLaps = math.ceil(raceTime/lapTime)
         else:
-            if laps <= 0:
+            if raceLaps <= 0:
                 await ctx.send(embed=self.error_embed('Invalid Parameter', 'The `laps`-count must be greater than 0'))
                 return
-            raceTime = timedelta(seconds=laps*lapTime.total_seconds())
+            raceTime = timedelta(seconds=raceLaps*lapTime.total_seconds())
 
 
         if reserve_laps < 0:
