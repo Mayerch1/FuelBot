@@ -1,9 +1,10 @@
 import os
-import discord
-from discord.ext import commands, tasks
-
+import asyncio
 import requests
 import json
+
+import interactions
+from datetime import datetime, timedelta
 
 class BotListService:
     def __init__(self, name, api_base, api_path, server_cnt_name=None, shard_cnt_name=None, shard_id_name=None):
@@ -63,11 +64,10 @@ ServerList = [
 ]
 
 
-class ServerCountPost(commands.Cog):
+class ServerCountPost():
 
     def __init__(self, client):
-
-        self.client = client
+        self.client: interactions.Client = client
         self.serverList = ServerList
         self.user_agent = "fuelBot (https://github.com/Mayerch1/FuelBot)"
 
@@ -83,18 +83,6 @@ class ServerCountPost(commands.Cog):
             else:
                 print(f'ignoring {sList.name}, no Token')
 
-        self.update_stats.start()
-
-
-    def cog_unload(self):
-        print('stopping all ServerPost jobs')
-        self.update_stats.cancel()
-
-
-    @commands.Cog.listener()
-    async def on_ready(self):
-        print('ServerCountPost loaded')
-
 
 
     async def post_count(self, service: BotListService, payload):
@@ -106,7 +94,7 @@ class ServerCountPost(commands.Cog):
             payload ([type]): [description]
         """
 
-        url = service.api_base + service.api_path.format(self.client.user.id)
+        url = service.api_base + service.api_path.format(self.client.me.id)
         
         headers = {
             'User-Agent'   : self.user_agent,
@@ -122,11 +110,12 @@ class ServerCountPost(commands.Cog):
             print(f'{service.name} Server Count Post failed with {r.status_code}')
 
 
-    @tasks.loop(minutes=30)
+
     async def update_stats(self):
         """This function runs every 30 minutes to automatically update your server count."""
 
-        server_count = len(self.client.guilds)
+        guilds = await self.client._http.get_self_guilds()
+        server_count = len(guilds)
         #Analytics.guild_cnt(server_count)
 
         for sList in self.serverList:
@@ -141,18 +130,37 @@ class ServerCountPost(commands.Cog):
             payload = {
                 f'{cnt_name}': server_count
             }
-            if self.client.shard_count and shard_name:
-                payload[shard_name] = self.client.shard_count
-            if self.client.shard_id and id_name:
-                payload[id_name] = self.client.shard_id
+            # if self.client.shard_count and shard_name:
+            #     payload[shard_name] = self.client.shard_count
+            # if self.client.shard_id and id_name:
+            #     payload[id_name] = self.client.shard_id
 
             await self.post_count(sList, payload=payload)
 
 
-    @update_stats.before_loop
-    async def update_stats_before(self):
-        await self.client.wait_until_ready()
 
+    async def loop(self):
+        loop_interval = timedelta(hours=1)
+        loop_start = None
+        while 1:
+            loop_start = datetime.utcnow()
 
-def setup(client):
-    client.add_cog(ServerCountPost(client))
+            try:
+                await self.update_stats()
+            except Exception as e:
+                print('aborted post due to exception')
+                print(e)
+
+            loop_end = datetime.utcnow()
+            wait_time = loop_interval - (loop_end-loop_start)
+            wait_time_s = max(wait_time.total_seconds(), 0)
+
+            print(f'post sleeping for {wait_time_s}s')
+            await asyncio.sleep(wait_time_s)
+  
+
+    def start_loop(self):
+
+        async_loop = asyncio.get_event_loop()
+        asyncio.ensure_future(self.loop(), loop=async_loop)
+        print('started ServerCountPost loop')

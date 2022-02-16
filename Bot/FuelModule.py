@@ -2,18 +2,9 @@ import math
 import regex
 
 from datetime import timedelta
+import interactions
 
-import discord
-from discord.ext import commands, tasks
-
-from discord_slash import cog_ext, SlashContext, ComponentContext
-from discord_slash.context import MenuContext
-from discord_slash.utils.manage_commands import create_option, create_choice
-from discord_slash.utils import manage_components
-from discord_slash.model import SlashCommandOptionType, ButtonStyle, ContextMenuType
-
-
-class FuelModule(commands.Cog):
+class FuelModule():
     
     ##################
     # Types
@@ -35,23 +26,21 @@ class FuelModule(commands.Cog):
     # Cog setup
     #################
     
-    def __init__(self, client):
-        self.client = client
+    def __init__(self, bot):
+        self.client = bot
+        self._avatar_url = 'https://cdn.discordapp.com/avatars'
         
-    @commands.Cog.listener()
-    async def on_ready(self):
-        print('FuelModule loaded')
-    
+
     ##################
     # Fuel stuff
     #################
     
     def error_embed(self, title, reason):
         
-        eb = discord.Embed(title=title, description=reason)
-        eb.color = 0xff0000
+        eb = interactions.Embed(title=title, description=reason, color=0xff0000)
         return eb
     
+
     def parseRaceLen(self, length):
         """parse the inputted race duration
            priority for parsing is:
@@ -177,51 +166,66 @@ class FuelModule(commands.Cog):
         lapTime = delta_to_lapTime(data.lapTime)
         reserveRatio = data.reserveLaps / data.raceLaps*100
 
-        eb = discord.Embed(title='Fuel Calculation')
-        eb.color=0x0099ff
-        
-        eb.add_field(name='Racetime', value=raceTime, inline=True)
-        eb.add_field(name='Laptime', value=lapTime, inline=True)
-        eb.add_field(name='Fuel per Lap', value=data.fuelUsage, inline=True)
-        eb.add_field(name='Racelaps', value=data.raceLaps, inline=True)
-        eb.add_field(name='Fuel per Minute (est.)', value="%.2f" % data.fpm, inline=True)
-        eb.add_field(name='Minimum Fuel Required', value=f'{math.ceil(data.fuel)} l', inline=False)
-        eb.add_field(name=f'Safe Fuel (+{data.reserveLaps} laps / +{int(reserveRatio)}%)', value=f'{math.ceil(data.saveFuel)} l', inline=True)
-        
+        eb = interactions.Embed(
+            title='Fuel Calculation',
+            color=0x0099ff,
+            fields=[
+                interactions.EmbedField(name='Racetime', value=raceTime, inline=True),
+                interactions.EmbedField(name='Laptime', value=lapTime, inline=True),
+                interactions.EmbedField(name='Fuel per Lap', value=f'{data.fuelUsage:.2f}', inline=True),
+                interactions.EmbedField(name='Racelaps', value=f'{data.raceLaps}', inline=True),
+                interactions.EmbedField(name='Fuel per Minute (est.)', value="%.2f" % data.fpm, inline=True),
+                interactions.EmbedField(name='Minimum Fuel Required', value=f'{math.ceil(data.fuel)} l', inline=False),
+                interactions.EmbedField(name=f'Safe Fuel (+{data.reserveLaps} laps / +{int(reserveRatio)}%)', value=f'{math.ceil(data.saveFuel)} l', inline=True)
+            ],
+            footer=interactions.EmbedFooter(
+                text=f'Calculation requested by {ctx.author.nick or ctx.author.user.username}',
+                icon_url=f'{self._avatar_url}/{ctx.author.user.id}/{ctx.author.avatar}.png'
+            )
+        )
 
-        eb.set_author(name=ctx.me.display_name, icon_url=ctx.me.avatar_url or ctx.me.default_avatar_url)
-        eb.set_footer(text=f'Calculation requested by {ctx.author.display_name}', icon_url=ctx.author.avatar_url or ctx.author.default_avatar_url)
         return eb
     
     
     async def handle_fuel_calculation(self, ctx, length: str, raceLaps: int, laptime: str, fuel_usage: float, reserve_laps: int):
         
         try:
+            reserve_laps = int(reserve_laps)
+        except ValueError:
+            await ctx.send(embeds=self.error_embed('Invalid Parameter', 'The `reserve_laps` must be an integer (e.g. `3`)'))
+            return
+            
+        try:
             fuel_usage = float(fuel_usage)
         except ValueError:
-            await ctx.send(embed=self.error_embed('Invalid Parameter', 'The `fuel_usage` must be a decimal number (e.g. `3.1`)'))
+            await ctx.send(embeds=self.error_embed('Invalid Parameter', 'The `fuel_usage` must be a decimal number (e.g. `3.1`)'))
             return
 
         lapTime = self.parseLapTime(laptime)
         if lapTime <= timedelta(minutes=0):
-            await ctx.send(embed=self.error_embed('Invalid Parameter', 'The `laptime` must be greater than 0. Check for the correct format of `mm:ss.fff`'))
+            await ctx.send(embeds=self.error_embed('Invalid Parameter', 'The `laptime` must be greater than 0. Check for the correct format of `mm:ss.fff`'))
             return
         
         if length:
             raceTime = self.parseRaceLen(length)
             if raceTime <= timedelta(minutes=0):
-                await ctx.send(embed=self.error_embed('Invalid Parameter', 'The `raceTime` must be greater than 0. Check for the correct format of `hh:mm`'))
+                await ctx.send(embeds=self.error_embed('Invalid Parameter', 'The `raceTime` must be greater than 0. Check for the correct format of `hh:mm`'))
                 return
             raceLaps = math.ceil(raceTime/lapTime)
         else:
+            try:
+                raceLaps = int(raceLaps)
+            except ValueError:
+                await ctx.send(embeds=self.error_embed('Invalid Parameter', 'The `race_laps` must be an integer (e.g. `3`)'))
+                return
             if raceLaps <= 0:
-                await ctx.send(embed=self.error_embed('Invalid Parameter', 'The `laps`-count must be greater than 0'))
+                await ctx.send(embeds=self.error_embed('Invalid Parameter', 'The `race_laps`-count must be greater than 0'))
                 return
             raceTime = timedelta(seconds=raceLaps*lapTime.total_seconds())
 
 
         if reserve_laps < 0:
-            await ctx.send(embed=self.error_embed('Invalid Parameter', 'The `reserve_laps` must be greater or equals to 0'))
+            await ctx.send(embeds=self.error_embed('Invalid Parameter', 'The `reserve_laps` must be greater or equals to 0'))
             return
 
         
@@ -230,68 +234,4 @@ class FuelModule(commands.Cog):
         self.setFuelUsage(lapData)
         eb = self.getFuelEmbed(ctx, lapData)
 
-        await ctx.send(embed=eb)
-        
-
-    @cog_ext.cog_subcommand(base='fuel', name='time', description='Calculate fuel for time limited races',
-                            options=[
-                                create_option(
-                                    name='length',
-                                    description='hh:mm or minutes',
-                                    required=True,
-                                    option_type=SlashCommandOptionType.STRING
-                                ),
-                                create_option(
-                                    name='laptime',
-                                    description='m:ss.ff or total seconds',
-                                    required=True,
-                                    option_type=SlashCommandOptionType.STRING
-                                ),
-                                create_option(
-                                    name='fuel_usage',
-                                    description='in liters/lap',
-                                    required=True,
-                                    option_type=SlashCommandOptionType.STRING
-                                ),
-                                create_option(
-                                    name='reserve_laps',
-                                    description='specify how many reserve is planned for the safe recommendation',
-                                    required=False,
-                                    option_type=SlashCommandOptionType.INTEGER
-                                )
-                            ])
-    async def fuel_time(self, ctx, length, laptime, fuel_usage, reserve_laps=3):
-        await self.handle_fuel_calculation(ctx, length, None, laptime, fuel_usage, reserve_laps)
-    
-    @cog_ext.cog_subcommand(base='fuel', name='laps', description='Calculate fuel for time limited races',
-                            options=[
-                                create_option(
-                                    name='laps',
-                                    description='number of laps',
-                                    required=True,
-                                    option_type=SlashCommandOptionType.INTEGER
-                                ),
-                                create_option(
-                                    name='laptime',
-                                    description='m:ss.ff or total seconds',
-                                    required=True,
-                                    option_type=SlashCommandOptionType.STRING
-                                ),
-                                create_option(
-                                    name='fuel_usage',
-                                    description='in liters/lap',
-                                    required=True,
-                                    option_type=SlashCommandOptionType.STRING
-                                ),
-                                create_option(
-                                    name='reserve_laps',
-                                    description='specify how many reserve is planned for the safe recommendation',
-                                    required=False,
-                                    option_type=SlashCommandOptionType.INTEGER
-                                )
-                            ])
-    async def fuel_laps(self, ctx, laps, laptime, fuel_usage, reserve_laps=3):
-        await self.handle_fuel_calculation(ctx, None, laps, laptime, fuel_usage, reserve_laps)
-    
-def setup(client):
-    client.add_cog(FuelModule(client))
+        await ctx.send(embeds=eb)
