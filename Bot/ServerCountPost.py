@@ -23,7 +23,7 @@ ServerList = [
     BotListService(
         name='TopGG',
         api_base='https://top.gg/api',
-        api_path='/bots/{:d}/stats',
+        api_path='/bots/{:s}/stats',
         server_cnt_name='server_count',
         shard_cnt_name='shard_count',
         shard_id_name='shard_id'
@@ -31,7 +31,7 @@ ServerList = [
     BotListService(
         name='BotsGG',
         api_base='https://discord.bots.gg/api/v1',
-        api_path='/bots/{:d}/stats',
+        api_path='/bots/{:s}/stats',
         server_cnt_name='guildCount',
         shard_cnt_name='shardCount',
         shard_id_name='shardId'
@@ -39,26 +39,26 @@ ServerList = [
     BotListService(
         name='DBL',
         api_base='https://discordbotlist.com/api/v1',
-        api_path='/bots/{:d}/stats',
+        api_path='/bots/{:s}/stats',
         server_cnt_name='guilds',
         shard_id_name='shard_id'
     ),
     BotListService(
         name='Discords',
         api_base='https://discords.com/bots/api',
-        api_path='/bot/{:d}',
+        api_path='/bot/{:s}',
         server_cnt_name='server_count'
     ),
     BotListService(
         name='Disforge',
         api_base='https://disforge.com/api',
-        api_path='/botstats/{:d}',
+        api_path='/botstats/{:s}',
         server_cnt_name='servers'
     ),
     BotListService(
         name='DLSpace',
         api_base='https://api.discordlist.space/v2',
-        api_path='/bots/{:d}',
+        api_path='/bots/{:s}',
         server_cnt_name='serverCount'
     ),
 ]

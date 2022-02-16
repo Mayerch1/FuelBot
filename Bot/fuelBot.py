@@ -29,6 +29,16 @@ async def help_direct_feedback(ctx):
 async def help_change_page(ctx, page):
     await help.send_help_page(ctx, page[0])
 
+
+@bot.component('help_tos')
+async def help_send_tos(ctx):
+    await help.help_send_tos(ctx)
+
+
+@bot.component('help_privacy')
+async def help_send_privacy(ctx):
+    await help.help_send_privacy(ctx)
+
 ############
 # Modals
 ############

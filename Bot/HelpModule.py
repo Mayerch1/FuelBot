@@ -5,6 +5,9 @@ FEEDBACK_CHANNEL = 890973072662884383
 FEEDBACK_MENTION = 872107119988588566
 
 class HelpModule():
+
+    tos_notice = open('legal/tos.md').read()
+    privacy_notice = open('legal/privacy.md').read()
                 
     def __init__(self, client):
         self.client: interactions.Client = client
@@ -12,6 +15,15 @@ class HelpModule():
     # =====================
     # helper methods
     # =====================
+
+    async def help_send_tos(self, ctx):
+        await ctx.send(HelpModule.tos_notice, ephemeral=True)
+            
+
+    async def help_send_privacy(self, ctx):
+        await ctx.send(HelpModule.privacy_notice, ephemeral=True)
+
+
     
     async def send_feedback(self, ctx):
         """give the user the option to send some quick
@@ -135,6 +147,20 @@ class HelpModule():
                 )
             ]
             row_1 = interactions.ActionRow(components=buttons)
+
+            buttons = [
+                interactions.Button(
+                    style=interactions.ButtonStyle.SECONDARY,
+                    label='ToS',
+                    custom_id='help_tos'
+                ),
+                interactions.Button(
+                    style=interactions.ButtonStyle.SECONDARY,
+                    label='Privacy',
+                    custom_id='help_privacy'
+                )
+            ]
+            row_2 = interactions.ActionRow(components=buttons)
             
 
             options = [
@@ -161,8 +187,8 @@ class HelpModule():
                     max_values=1,
             )
 
-            row_2 = interactions.ActionRow(components=[help_selection])
-            return [row_1, row_2]
+            row_3 = interactions.ActionRow(components=[help_selection])
+            return [row_1, row_2, row_3]
 
 
         if page == 'overview':
