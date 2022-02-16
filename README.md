@@ -2,7 +2,7 @@
 
 This bot can be used to calculate the fuel usage during a race and is compatible with any sim which allows you to read out your fuel usage.
 
-![Fuel Results](https://imgur.com/7byL2ke.png)
+![Fuel Results](https://imgur.com/MwfBw5C.png)
 
 There are two operation modes
 * time limited races (e.g. GT classes) 
@@ -17,7 +17,7 @@ Simply start invoking the slash command for this bot `/fuel time` or `/fuel usag
 The `/help` command lists the available commands.
 
 
-![Create Fuel Calculation](https://imgur.com/KuMKpqP.png)
+![Create Fuel Calculation](https://imgur.com/vRvqum4.png)
 
 
 ## Parameters

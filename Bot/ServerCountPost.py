@@ -95,7 +95,7 @@ class ServerCountPost():
             payload ([type]): [description]
         """
 
-        url = service.api_base + service.api_path.format(self.client.me.id)
+        url = service.api_base + service.api_path.format(str(self.client.me.id))
         
         headers = {
             'User-Agent'   : self.user_agent,

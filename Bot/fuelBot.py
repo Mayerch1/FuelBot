@@ -7,8 +7,7 @@ import ServerCountPost
 
 
 token = os.getenv('BOT_TOKEN')
-intents = (interactions.Intents.GUILDS | interactions.Intents.GUILD_MESSAGES)
-#intents = interactions.Intents.ALL
+intents = interactions.Intents.GUILDS
 
 bot = interactions.Client(token=token, intents=intents)
 fm = FuelModule.FuelModule(bot)
