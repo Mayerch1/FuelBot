@@ -67,6 +67,7 @@ ServerList = [
 class ServerCountPost():
 
     def __init__(self, client):
+        self.loop_running = False
         self.client: interactions.Client = client
         self.serverList = ServerList
         self.user_agent = "fuelBot (https://github.com/Mayerch1/FuelBot)"
@@ -140,6 +141,10 @@ class ServerCountPost():
 
 
     async def loop(self):
+        if self.loop_running:
+            return
+
+        self.loop_running = True
         loop_interval = timedelta(hours=1)
         loop_start = None
         while 1:
@@ -157,6 +162,8 @@ class ServerCountPost():
 
             print(f'post sleeping for {wait_time_s}s')
             await asyncio.sleep(wait_time_s)
+
+        self.loop_running = False
   
 
     def start_loop(self):
