@@ -4,4 +4,3 @@ aiodns
 brotlipy
 cchardet
 orjson
-py-cord --pre
