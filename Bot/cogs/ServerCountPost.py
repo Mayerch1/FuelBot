@@ -103,7 +103,7 @@ class ServerCountPost(discord.Cog):
             payload ([type]): [description]
         """
 
-        url = service.api_base + service.api_path.format(str(self.client.me.id))
+        url = service.api_base + service.api_path.format(str(self.client.user.id))
         
         headers = {
             'User-Agent'   : self.user_agent,

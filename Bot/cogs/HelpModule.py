@@ -243,7 +243,7 @@ class HelpModule(discord.Cog):
     # Commands
     # ###########
 
-    @discord.slash_command(name='help', description='Show the help page for this bot', guild_ids=[140150091607441408])
+    @discord.slash_command(name='help', description='Show the help page for this bot')
     async def help(self, 
                     ctx: discord.ApplicationContext,
                     #page: discord.Option(str, "select a page", default='overview', choices=['overview', 'parameters'])
