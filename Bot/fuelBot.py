@@ -1,178 +1,88 @@
 import os
-import interactions
+import discord
+import logging
+import traceback
+import sys
 
-import FuelModule
-import HelpModule
-import ServerCountPost
-
-
-token = os.getenv('BOT_TOKEN')
-intents = interactions.Intents.GUILDS
-
-bot = interactions.Client(token=token, intents=intents)
-fm = FuelModule.FuelModule(bot)
-help = HelpModule.HelpModule(bot)
-serverCount = ServerCountPost.ServerCountPost(bot)
+from pathlib import Path
 
 
+logging.basicConfig(level=logging.DEBUG)
+handler = logging.FileHandler(filename='discord.log', encoding='utf-8', mode='w')
+handler.setFormatter(logging.Formatter('%(asctime)s:%(levelname)s:%(name)s: %(message)s'))
+
+dc_logger = logging.getLogger('discord')
+dc_logger.setLevel(logging.WARNING)
+log = logging.getLogger('FuelBot')
+
+dc_logger.addHandler(handler)
+log.addHandler(handler)
 
 
-###########
-# Eevents 
-###########
-@bot.component("help_direct_feedback")
-async def help_direct_feedback(ctx):
-    await help.send_feedback(ctx)
+
+token: str = os.getenv('BOT_TOKEN')
+intents = discord.Intents.none()
+#intents.guilds = True
+
+bot: discord.AutoShardedBot = discord.AutoShardedBot(intents=intents)
 
 
-@bot.component("help_navigation")
-async def help_change_page(ctx, page):
-    await help.send_help_page(ctx, page[0])
-
-
-@bot.component('help_tos')
-async def help_send_tos(ctx):
-    await help.help_send_tos(ctx)
-
-
-@bot.component('help_privacy')
-async def help_send_privacy(ctx):
-    await help.help_send_privacy(ctx)
-
-############
-# Modals
-############
-
-@bot.modal("modal_direct_feedback")
-async def mod_direct_feedback(ctx, feedback: str):
-    await help.process_feedback(ctx, feedback)
-
-
-@bot.modal("fuel_length_form")
-async def modal_response(ctx, race_len, lap_time, fuel_usage, reserve_laps):
-    reserve_laps = reserve_laps or '3'
-    await fm.handle_fuel_calculation(ctx, race_len, None, lap_time, fuel_usage, reserve_laps)
-
-@bot.modal("fuel_laps_form")
-async def modal_response(ctx, race_laps, lap_time, fuel_usage, reserve_laps='3'):
-    reserve_laps = reserve_laps or '3'
-    await fm.handle_fuel_calculation(ctx, None, race_laps, lap_time, fuel_usage, reserve_laps)
-
-#############
-# Commands
-############
-
-
-@bot.command(
-    name='help',
-    description='Show the help page for this bot',
-    options=[
-        interactions.Option(
-            type=interactions.OptionType.STRING,
-            name='page',
-            description='select a page',
-            required=False,
-            choices=[
-                interactions.Choice(
-                    name='overview',
-                    value='overview'
-                ),
-                interactions.Choice(
-                    name='parameters',
-                    value='parameters'
-                )
-            ]
-        )
-    ]
-)
-async def help_cmd(ctx, page:str='overview'):
-    await help.send_help_page(ctx, page)
-
-
-@bot.command(
-    name='fuel',
-    description='Calculate fuel usage for a race',
-    options=[
-        interactions.Option(
-            name='time',
-            description='Calculate based on max session time',
-            type=interactions.OptionType.SUB_COMMAND
-        ),
-        interactions.Option(
-            name='laps',
-            description='Calculate based on max laps',
-            type=interactions.OptionType.SUB_COMMAND
-        )
-    ]
-)
-async def fuel_time(ctx: interactions.CommandContext, sub_command: str):
-
-    if sub_command == 'time':
-        mod_id = 'fuel_length_form'
-        duration = interactions.TextInput(
-            style=interactions.TextStyleType.SHORT,
-            label='Race Length (hh:mm or minutes)',
-            custom_id='txt_race_time',
-            min_length=1,
-            max_length=10
-        )
+# ###########
+# Methods
+# ###########
+async def log_exception(ctx: discord.ApplicationContext, error: Exception):
+    
+    if isinstance(error, discord.NotFound):
+        log.warning('interaction timed out (not found)')
     else:
-        mod_id = 'fuel_laps_form'
-        duration = interactions.TextInput(
-            style=interactions.TextStyleType.SHORT,
-            label='Race Laps',
-            custom_id='txt_race_laps',
-            min_length=1,
-            max_length=10
-        )
+        t = (type(error), error, error.__traceback__)
+        log.error(''.join(traceback.format_exception(*t)))
 
-    modal = interactions.Modal(
-        title='Fuel Calculations',
-        custom_id=mod_id,
-        components=[
-            duration,
-            interactions.TextInput(
-                style=interactions.TextStyleType.SHORT,
-                label='Laptime (m:ss.ff or seconds)',
-                custom_id='txt_lap_time',
-                min_length=1,
-                max_length=10
-            ),
-            interactions.TextInput(
-                style=interactions.TextStyleType.SHORT,
-                label='Fuel Usage (ltrs/lap)',
-                custom_id='txt_fuel_usage',
-                min_length=1,
-                max_length=10
-            ),
-            interactions.TextInput(
-                style=interactions.TextStyleType.SHORT,
-                label='Reserve Laps for safe (optional)',
-                custom_id='txt_reserve_laps',
-                required=False,
-                placeholder='3',
-                min_length=1,
-                max_length=5
-            )
-        ]
-    )
-    await ctx.popup(modal)
 
+# ###########
+# Commands
+# ###########
+
+
+
+# ###########
+# Events
+# ###########
+@bot.event
+async def on_ready():
+    log.info('Logged in as')
+    log.info(bot.user)
+    log.info(bot.user.id)
+    log.info('----------------')
 
 
 @bot.event
-async def on_ready():
-    # debug log
-    print('Interaction as')
-    print(bot.me.name)
-    print(bot.me.id)
-    print('-----------')
+async def on_shard_connect(shard_id):
+    log.debug(f'shard {shard_id} connected')
 
-    serverCount.start_loop()
+
+@bot.event
+async def on_application_command_error(ctx: discord.ApplicationContext, error: Exception):
+    await log_exception(ctx, error)
+
+
+@bot.event
+async def on_error(event_method, *args, **kwargs):
+    exc_info = sys.exc_info()
+    log.critical('non-application error occurred', exc_info=exc_info)
+
+
+# #############
+# # Commands
+# ############
 
 
 def main():
-    bot.start()
+    for filename in os.listdir(Path(__file__).parent / 'cogs'):
+        if filename.endswith('.py'):
+            bot.load_extension(f'cogs.{filename[:-3]}')
+
+    bot.run(token)
 
 
 if __name__ == '__main__':

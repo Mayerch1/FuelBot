@@ -1,4 +1,6 @@
 .env
+fuelbot-env/**
 __pycache__/
+discord.log
 token.txt
 tokens/**

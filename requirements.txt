@@ -1,3 +1,7 @@
 regex
 requests
-git+https://github.com/interactions-py/library@unstable
+aiodns
+brotlipy
+cchardet
+orjson
+py-cord --pre
