@@ -12,7 +12,7 @@ services:
 
     volumes:
       - ./tokens:/code/tokens
-      - ./logs:./code/logs
+      - ./logs:/code/logs
 
     restart: always
     
