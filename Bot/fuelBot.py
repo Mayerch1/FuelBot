@@ -7,13 +7,15 @@ import sys
 from pathlib import Path
 
 
-logging.basicConfig(level=logging.DEBUG)
-handler = logging.FileHandler(filename='discord.log', encoding='utf-8', mode='w')
+logging.basicConfig(level=logging.INFO) # general 3rd party
+
+handler = logging.FileHandler(filename='./logs/discord.log', encoding='utf-8', mode='w')
 handler.setFormatter(logging.Formatter('%(asctime)s:%(levelname)s:%(name)s: %(message)s'))
 
 dc_logger = logging.getLogger('discord')
-dc_logger.setLevel(logging.WARNING)
+dc_logger.setLevel(logging.WARNING) # discord lib
 log = logging.getLogger('FuelBot')
+log.setLevel(logging.DEBUG) # own code
 
 dc_logger.addHandler(handler)
 log.addHandler(handler)
