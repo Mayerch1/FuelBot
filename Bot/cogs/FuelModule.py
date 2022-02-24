@@ -281,7 +281,7 @@ class FuelTimeModal(FuelModal):
     def populate(self):
         self.add_item(
             discord.ui.InputText(
-                label='Race Length (hh::ss or minutes)',
+                label='Race Length (hh:ss or minutes)',
                 placeholder='0:40',
                 custom_id='modal_field_racelen_time'
             )

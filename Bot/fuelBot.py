@@ -22,9 +22,6 @@ dc_logger.setLevel(logging.WARNING) # discord lib
 log = logging.getLogger('FuelBot')
 log.setLevel(logging.DEBUG) # own code
 
-log = logging.getLogger('ext.servercount')
-log.setLevel(logging.DEBUG) # debug
-
 dc_logger.addHandler(handler)
 log.addHandler(handler)
 
