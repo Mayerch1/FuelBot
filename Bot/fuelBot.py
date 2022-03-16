@@ -38,9 +38,8 @@ bot: discord.AutoShardedBot = discord.AutoShardedBot(intents=intents)
 # Methods
 # ###########
 async def log_exception(ctx: discord.ApplicationContext, error: Exception):
-    
-    if isinstance(error, discord.NotFound):
-        log.warning('interaction timed out (not found)')
+    if isinstance(error, discord.ApplicationCommandInvokeError) and isinstance(error.original, discord.NotFound):
+        log.warning(f'interaction timed out ({error.original.text})')
     else:
         t = (type(error), error, error.__traceback__)
         log.error(''.join(traceback.format_exception(*t)))
@@ -55,6 +54,7 @@ async def log_exception(ctx: discord.ApplicationContext, error: Exception):
 # ###########
 # Events
 # ###########
+
 @bot.event
 async def on_ready():
     log.info('Logged in as')
@@ -92,7 +92,7 @@ def set_tokens():
 def config_help():
 
     custom_footer = 'If you like this bot, you can leave a vote at [top.gg](https://top.gg/bot/890731736252686337).\n'\
-                                'If you find a bug contact us on [Github](https://github.com/Mayerch1/QuoteBot) or join the support server.'
+                                'If you find a bug contact us on [Github](https://github.com/Mayerch1/FuelBot) or join the support server.'
 
     Help.init_help(bot, auto_detect_commands=True)
 
