@@ -1,4 +1,4 @@
-regex
+py-cord==2.4.1
 requests
 aiodns
 brotlipy

@@ -1,5 +1,5 @@
 import math
-import regex
+import re
 import logging
 
 from datetime import timedelta
@@ -68,9 +68,9 @@ class FuelModal(discord.ui.Modal):
         """
         
         timestmap = r'^(\d{1,2}:)?\d{1,2}$'
-        re_stamp = regex.compile(timestmap)
+        re_stamp = re.compile(timestmap)
         
-        re_minutes = regex.compile(r'^\d+$')
+        re_minutes = re.compile(r'^\d+$')
         
         delta = timedelta(seconds=0)
         if re_stamp.match(length):
@@ -120,9 +120,9 @@ class FuelModal(discord.ui.Modal):
             return ms
         
         timestmap = r'^(\d{1,2}:)?\d{1,2}(.\d{1,3})?$'
-        re_stamp = regex.compile(timestmap)
+        re_stamp = re.compile(timestmap)
         
-        re_seconds = regex.compile(r'^\d+$')
+        re_seconds = re.compile(r'^\d+$')
         
         delta = timedelta(seconds=0)
         if re_stamp.match(time):
@@ -281,7 +281,7 @@ class FuelTimeModal(FuelModal):
     def populate(self):
         self.add_item(
             discord.ui.InputText(
-                label='Race Length (hh:ss or minutes)',
+                label='Race Length (hh:mm or minutes)',
                 placeholder='0:40',
                 custom_id='modal_field_racelen_time'
             )
